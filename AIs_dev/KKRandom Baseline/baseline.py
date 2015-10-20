@@ -78,8 +78,6 @@ class KKBaselineAI(PlayerAIBase):
         '''
         # memory information
         self.needed_money = 0
-
-        
         self.money_to_be_taken = 0
         self.in_state_of_taking_money = False
 
@@ -107,7 +105,6 @@ class KKBaselineAI(PlayerAIBase):
         No response is required.
         '''
         self.needed_money = 0
-        self.turn += 1
         self.money_to_be_taken = 0
         self.in_state_of_taking_money = False
 
@@ -119,7 +116,7 @@ class KKBaselineAI(PlayerAIBase):
         '''
         pass
 
-    def landed_on_unowned_property(self, game_state, player, property):
+    def landed_on_unowned_property(self, game_state, player, prop):
         '''
         Called when the AI lands on an unowned property. Only the active
         player receives this notification.
@@ -130,7 +127,7 @@ class KKBaselineAI(PlayerAIBase):
         The default behaviour is DO_NOT_BUY.
         '''
         num = randint(0,1)
-        if num == 1:
+        if num == 1 and player.state.cash > prop.price:
             return PlayerAIBase.Action.BUY
         return PlayerAIBase.Action.DO_NOT_BUY
 
@@ -242,8 +239,6 @@ class KKBaselineAI(PlayerAIBase):
         No response is required.
         '''
 
-        if status == PlayerAIBase.Action.AUCTION_SUCCEEDED:
-            player.state.cash -= amount_paid
         pass
 
     def build_houses(self, game_state, player):
@@ -373,8 +368,7 @@ class KKBaselineAI(PlayerAIBase):
         The default action is STAY_IN_JAIL.
         '''
         num = randint(0,1)
-        if num == 1:
-            player.state.cash -= 50
+        if num == 1 and player.state.cash > 50
             PlayerAIBase.Action.BUY_WAY_OUT_OF_JAIL
         return PlayerAIBase.Action.STAY_IN_JAIL
 
