@@ -4,7 +4,7 @@ from .card import Card
 class RewardCard(Card):
     '''
     Manages cards that reward the player who picks them up.
-    For example: Bank pays you a dividend of £50.
+    For example: Bank pays you a dividend of $50.
     '''
     def __init__(self, reward):
         '''

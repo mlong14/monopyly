@@ -75,4 +75,8 @@ class PlayerState(object):
         '''
         return len(self.get_out_of_jail_free_cards)
 
+    def __str__(self):
+        out = {"square":self.square,"cash":self.cash,"properties":self.properties,"GTOJF cards": len(self.get_out_of_jail_free_cards),"is in jail": self.is_in_jail,"turns in jail": self.number_of_turns_in_jail,"owned sets":self.owned_sets,"owned unmortgaged sets":self.owned_unmortgaged_sets,"turns played": self.turns_played}
+        return str(out)
+
 

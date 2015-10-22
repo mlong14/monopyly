@@ -25,3 +25,9 @@ class DealResponse(object):
         self.maximum_cash_offered = maximum_cash_offered
         self.minimum_cash_wanted = minimum_cash_wanted
 
+    def __str__(self):
+        if self.action:
+            return "REJECT"
+        else:
+            return "ACCEPT"
+

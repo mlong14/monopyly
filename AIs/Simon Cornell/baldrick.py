@@ -27,6 +27,7 @@ class BaldrickAI(monopyly.PlayerAIBase) :
     '''
 
     def __init__(self) :
+        self.name = "Baldrick"
         self.__Reset()
 
 
@@ -438,11 +439,14 @@ class BaldrickAI(monopyly.PlayerAIBase) :
 
     # Methods called by the game
 
+    def set_name(self,n):
+        self.name = n
+        
     def get_name(self) :
         '''
         Returns the name shown for this AI.
         '''
-        return 'Baldrick'
+        return self.name
 
 
     def start_of_game(self):

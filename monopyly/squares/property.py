@@ -77,7 +77,7 @@ class Property(Square):
 
         # We take the rent from the player, and give it to the
         # player who owns the square...
-        Logger.log("{0} must pay rent of £{1} to {2}".format(player.name, rent, self.owner.name))
+        Logger.log("{0} must pay rent of ${1} to {2}".format(player.name, rent, self.owner.name))
         game.transfer_cash(player, self.owner, rent, Game.Action.PAY_AS_MUCH_AS_POSSIBLE)
 
     def calculate_rent(self, game, player):

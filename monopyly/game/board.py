@@ -1,5 +1,6 @@
 from ..squares import *
 from ..cards import *
+import random
 
 
 class Board(object):
@@ -20,6 +21,8 @@ class Board(object):
         '''
         # We hold a reference to the game-state so that we
         # can access the collection of players...
+
+        self.game_id = random.randint(0,1000000)
         self.game_state = game_state
 
         # We map the street sets to the collections of properties in them...

@@ -3,13 +3,15 @@ from monopyly import *
 import argparse
 parser = argparse.ArgumentParser()
 parser.add_argument("-d", "--ai_dir",
-                    default="AIs")
+                    default="AIs_dev")
+parser.add_argument("-t", "--tournament",
+                    action='store_true')
 
 args = parser.parse_args()
 
 # True to play a tournament, False to play a single game
 # with selected players...
-play_tournament = True
+play_tournament = args.tournament
 
 # We find the collection of AIs from the AIs folder...
 ais = load_ais(args.ai_dir)
@@ -30,7 +32,7 @@ if play_tournament:
         min_players_per_game=4,
         max_players_per_game=4,
         number_of_rounds=100,
-        maximum_games=35000,
+        maximum_games=2000,
         permutations_or_combinations=Tournament.PERMUTATIONS)
 
     # Sends updates to the C# GUI...
@@ -53,15 +55,19 @@ else:
     Logger.add_handler(ConsoleLogHandler(Logger.INFO))
 
     # We select specific AIs from the ones loaded...
-    sophie_ai = next(ai for ai in ais if ai.get_name() == "Sophie")
-    generous_daddy_ai = next(ai for ai in ais if ai.get_name() == "Generous Daddy")
-    mean_daddy_ai = next(ai for ai in ais if ai.get_name() == "Mean Daddy")
+    for ai in ais:
+        print(ai.get_name())
+    kk_ai = next(ai for ai in ais if ai.get_name() == "KKBaseline")
+    ml_ai = next(ai for ai in ais if ai.get_name() == "MLBaseline")
+    xander_ai = next(ai for ai in ais if ai.get_name() == "Xander")
+
+    oracle_ai = next(ai for ai in ais if ai.get_name() == "Baldrick")
 
     # We set up and play a single game...
     game = Game()
-    game.add_player(sophie_ai)
-    game.add_player(generous_daddy_ai)
-    game.add_player(mean_daddy_ai)
+    game.add_player(ml_ai)
+    game.add_player(kk_ai,oracle_ai)
+    game.add_player(xander_ai)
     game.play_game()
 
 

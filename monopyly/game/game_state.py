@@ -32,3 +32,6 @@ class GameState(object):
         '''
         return len(self.players)
 
+    def __str__(self):
+        return "Game State"
+

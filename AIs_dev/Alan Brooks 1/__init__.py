@@ -1,2 +1,0 @@
-from .brill import BrillAI
-

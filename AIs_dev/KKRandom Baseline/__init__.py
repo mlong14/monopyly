@@ -1,2 +1,2 @@
-from .baseline import BaselineAI
+from .baseline import KKBaselineAI
 

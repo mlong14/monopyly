@@ -1,5 +1,3 @@
-from .deal_proposal import DealProposal
-from .deal_response import DealResponse
 from monopyly import *
 
 import collections
@@ -74,7 +72,7 @@ class KKBaselineAI(PlayerAIBase):
 
     def __init__(self):
         '''
-        ctor
+        constructor
         '''
         # memory information
         self.needed_money = 0
@@ -126,7 +124,7 @@ class KKBaselineAI(PlayerAIBase):
 
         The default behaviour is DO_NOT_BUY.
         '''
-        num = randint(0,1)
+        num = random.randint(0,1)
         if num == 1 and player.state.cash > prop.price:
             return PlayerAIBase.Action.BUY
         return PlayerAIBase.Action.DO_NOT_BUY
@@ -367,8 +365,8 @@ class KKBaselineAI(PlayerAIBase):
 
         The default action is STAY_IN_JAIL.
         '''
-        num = randint(0,1)
-        if num == 1 and player.state.cash > 50
+        num = random.randint(0,1)
+        if num == 1 and player.state.cash > 50:
             PlayerAIBase.Action.BUY_WAY_OUT_OF_JAIL
         return PlayerAIBase.Action.STAY_IN_JAIL
 

@@ -2,7 +2,6 @@ from .player_state import PlayerState
 from ..squares import Property, Street
 import time
 
-
 class Player(object):
     '''
     Holds the PlayerState and a player AI (an object
@@ -17,6 +16,8 @@ class Player(object):
         self.ai = ai
         self.board = board
         self.player_number = player_number
+
+
 
     def owns_properties(self, properties):
         '''
@@ -83,6 +84,7 @@ class Player(object):
         The functions will be the AI methods.
         '''
         # We call the function and time how long the AI spends processing it...
+
         start = time.clock()
         result = function(*args)
         end = time.clock()
@@ -94,5 +96,95 @@ class Player(object):
 
         # And return what the function returned...
         return result
+
+    def __str__(self):
+        return self.state.__str__()
+
+
+#TODO
+#Data analysis packages that compares all moves to oracle, and makes numbers
+
+
+class OraclePlayer(Player):
+
+    def __init__(self, ai, player_number, board, oracle_ai):
+        super().__init__(ai, player_number, board)
+        self.oracle_ai = oracle_ai
+        self.oracle_ai.set_name(self.ai.get_name())
+
+        self.oracle_moves = {}
+        self.ai_moves = {}
+
+        self.f = open("logging/oracle_logs_{0}".format(board.game_id),"w")
+        self.call_count = 0
+
+    def call_ai(self, function, *args):
+
+        self.call_count+=1
+
+        start = time.clock()
+        result = function(*args)
+
+        funcToCall = getattr(self.oracle_ai, function.__name__)
+        or_result = funcToCall(*args)
+
+        self.log(function,result,or_result,*args)
+
+        end = time.clock()
+        elapsed_seconds = end - start
+
+        # We update the time the AI has remaining for the current game...
+        self.state.ai_processing_seconds_remaining -= elapsed_seconds
+        self.state.ai_processing_seconds_used += elapsed_seconds
+
+        # And return what the function returned...
+        return result
+
+    def args2tuple(self,*args):
+        arg_l = []
+        for a in args:
+            try:
+                arg_l.append(a.name)
+            except:
+                arg_l.append(a.__str__())
+        return tuple(arg_l)
+
+    def log(self,function,result,or_result,*args):
+
+        fn = function.__name__
+
+        self.f.write("{2}. Function: {0}, Args: {1}\n".format(fn,self.args2tuple(*args),self.call_count))
+        self.f.write("Baseline: {0}\n".format(result))
+        self.f.write("Oracle: {0}\n".format(or_result))
+
+        if fn not in self.ai_moves:
+            self.ai_moves[fn] = []
+            self.oracle_moves[fn] = []
+
+        self.ai_moves[fn].append(result.__str__())
+        self.oracle_moves[fn].append(or_result.__str__())
+
+
+    def basic_analysis(self):
+
+        print("")
+        print("BASIC ANALYSIS")
+
+        for k in sorted(self.ai_moves.keys()):
+            diff = 0
+            for i in range(len(self.ai_moves[k])):
+                if self.ai_moves[k][i] != self.oracle_moves[k][i]:
+                    diff+=1
+            print("Move: {0}, Similarity: {1}".format(k,100*(1-float(diff)/len(self.ai_moves[k]))))
+
+        print("")
+
+
+    def __str__(self):
+
+        ai_state = self.state.__str__()
+
+        return "(Oracle) {0}".format(ai_state)
+
 
 

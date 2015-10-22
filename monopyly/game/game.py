@@ -1,5 +1,5 @@
 from .dice import Dice
-from .player import Player
+from .player import Player, OraclePlayer
 from .game_state import GameState
 from .player_ai_base import PlayerAIBase
 from .board import Board
@@ -79,7 +79,7 @@ class Game(object):
         self.eminent_domain = True
         self.eminent_domain_round = 200
 
-    def add_player(self, ai_info):
+    def add_player(self, ai_info, oracle_info = None):
         '''
         Adds a player AI.
 
@@ -97,9 +97,18 @@ class Game(object):
             player_number = 0
 
         # We wrap the AI up into a Player object...
-        player = Player(ai, player_number, self.state.board)
-        self.state.players.append(player)
-        return player
+        if oracle_info is None:
+            player = Player(ai, player_number, self.state.board)
+            self.state.players.append(player)
+            return player
+        else:
+            try:
+                oracle_ai = oracle_info[0]
+            except:
+                oracle_ai = oracle_info
+            player = OraclePlayer(ai, player_number, self.state.board, oracle_ai)
+            self.state.players.append(player)
+            return player
 
     def play_game(self):
         '''
@@ -109,7 +118,11 @@ class Game(object):
         # player-number they are...
         Logger.log("Start of game. Players:")
         Logger.indent()
+
+        full_player_list = []
+
         for player in self.state.players:
+            full_player_list.append(player)
             player.call_ai(player.ai.start_of_game)
             Logger.log(player.name)
         Logger.dedent()
@@ -129,6 +142,12 @@ class Game(object):
             if self.number_of_rounds_played == self.maximum_rounds:
                 Logger.log("Maximum rounds played")
                 break
+
+        for player in full_player_list:
+            print(player.name, player) 
+
+            if type(player) == OraclePlayer:
+                player.basic_analysis()
 
         # The game is over, so we work out which player has won...
         self.status = Game.Action.GAME_OVER
