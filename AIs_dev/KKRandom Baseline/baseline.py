@@ -203,10 +203,9 @@ class KKBaselineAI(PlayerAIBase):
         num = random.randint(0,1)
         if num == 1:
             return PlayerAIBase.Action.TAKE_A_CHANCE
-        player.state.cash -= 10
         return PlayerAIBase.Action.PAY_TEN_POUND_FINE
 
-    def property_offered_for_auction(self, game_state, player, property):
+    def property_offered_for_auction(self, game_state, player, prop):
         '''
         Called when a property is put up for auction.
 
@@ -223,7 +222,7 @@ class KKBaselineAI(PlayerAIBase):
 
         The default behaviour is not to bid.
         '''
-        return random.randint(1, property.price / 2)
+        return random.randint(1, prop.price / 2)
 
     def auction_result(self, status, property, player, amount_paid):
         '''
