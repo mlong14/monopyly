@@ -79,6 +79,7 @@ class Xander(PlayerAIBase):
         '''
         The 'constructor'.
         '''
+        self.name = "Xander"
         self.cash_reserve = 0
         self.high_water_mark = 0
         self.num_turns = 0
@@ -95,7 +96,11 @@ class Xander(PlayerAIBase):
         '''
         Returns the name shown for this AI.
         '''
-        return "Xander"
+        return self.name
+
+    def set_name(self,n):
+        self.name = n
+
 
     def start_of_game(self):
         '''
@@ -119,8 +124,7 @@ class Xander(PlayerAIBase):
 
         No response is required.
         '''
-        if player.ai != self:
-            return
+ 
 
         self.num_turns += 1
 

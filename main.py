@@ -57,17 +57,20 @@ else:
     # We select specific AIs from the ones loaded...
     for ai in ais:
         print(ai.get_name())
-    kk_ai = next(ai for ai in ais if ai.get_name() == "KKBaseline")
-    ml_ai = next(ai for ai in ais if ai.get_name() == "MLBaseline")
+    kk_ai1 = next(ai for ai in ais if ai.get_name() == "KKBaseline")
+    kk_ai2 = next(ai for ai in ais if ai.get_name() == "KKBaseline")
     xander_ai = next(ai for ai in ais if ai.get_name() == "Xander")
-
-    oracle_ai = next(ai for ai in ais if ai.get_name() == "Baldrick")
+    baldrick_ai = next(ai for ai in ais if ai.get_name() == "Baldrick")
+    
 
     # We set up and play a single game...
     game = Game()
-    game.add_player(ml_ai)
-    game.add_player(kk_ai,oracle_ai)
-    game.add_player(xander_ai)
+    # game.add_player(ml_ai)
+    # game.add_player(kk_ai,oracle_ai)
+    # game.add_player(xander_ai)
+    game.add_player(kk_ai1)
+    game.add_player(xander_ai,mc_ais=[baldrick_ai,kk_ai2])
+    #game.add_player(kk_ai2)
     game.play_game()
 
 

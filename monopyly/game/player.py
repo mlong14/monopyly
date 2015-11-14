@@ -17,6 +17,8 @@ class Player(object):
         self.board = board
         self.player_number = player_number
 
+    def is_mcp(self):
+        return False
 
 
     def owns_properties(self, properties):
@@ -62,6 +64,7 @@ class Player(object):
         '''
         return self.ai.get_name()
 
+
     def is_same_player(self, other):
         '''
         Returns true if the other player is the same as this one.
@@ -84,12 +87,11 @@ class Player(object):
         The functions will be the AI methods.
         '''
         # We call the function and time how long the AI spends processing it...
-
         start = time.clock()
         result = function(*args)
         end = time.clock()
         elapsed_seconds = end - start
-
+ 
         # We update the time the AI has remaining for the current game...
         self.state.ai_processing_seconds_remaining -= elapsed_seconds
         self.state.ai_processing_seconds_used += elapsed_seconds
@@ -187,4 +189,54 @@ class OraclePlayer(Player):
         return "(Oracle) {0}".format(ai_state)
 
 
+
+class MonteCarloPlayer(Player):
+
+    def __init__(self, ai, player_number, board, ai_list):
+        super().__init__(ai, player_number, board)
+        self.ai_list = ai_list
+
+        for ais in self.ai_list:
+            ais.set_name(self.ai.get_name())
+
+        self.ai_moves = {}
+        self.curr_ai = 0
+        self.num_ais = len(ai_list)
+
+        self.call_count = 0
+
+    def is_mcp(self):
+        return True
+
+    def get_ais(self):
+        return self.ai_list
+
+    def set_ai(self,ai_ind):
+        self.curr_ai = ai_ind
+
+    def call_ai(self, function, *args):
+
+        self.call_count+=1
+
+        start = time.clock()
+
+        funcToCall = getattr(self.ai_list[self.curr_ai], function.__name__)
+        result = funcToCall(*args)
+
+        end = time.clock()
+        elapsed_seconds = end - start
+
+        # We update the time the AI has remaining for the current game...
+        self.state.ai_processing_seconds_remaining -= elapsed_seconds
+        self.state.ai_processing_seconds_used += elapsed_seconds
+
+        # And return what the function returned...
+        return result
+
+
+    def __str__(self):
+
+        ai_state = self.state.__str__()
+
+        return "(MC Player) {0}".format(ai_state) 
 

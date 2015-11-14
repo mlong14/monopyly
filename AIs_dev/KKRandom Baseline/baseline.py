@@ -75,6 +75,7 @@ class KKBaselineAI(PlayerAIBase):
         constructor
         '''
         # memory information
+        self.name = "KKBaseline"
         self.needed_money = 0
         self.money_to_be_taken = 0
         self.in_state_of_taking_money = False
@@ -83,7 +84,10 @@ class KKBaselineAI(PlayerAIBase):
         '''
         Returns the name shown for this AI.
         '''
-        return "KKBaseline"
+        return self.name
+
+    def set_name(self,name):
+        self.name = name
 
     def start_of_game(self):
         '''

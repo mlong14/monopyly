@@ -1,5 +1,5 @@
 from .dice import Dice
-from .player import Player, OraclePlayer
+from .player import Player, OraclePlayer, MonteCarloPlayer
 from .game_state import GameState
 from .player_ai_base import PlayerAIBase
 from .board import Board
@@ -7,6 +7,7 @@ from .deal_response import DealResponse
 from .deal_result import DealResult
 from ..squares import Square, Property, Street
 from ..utility import Logger
+import copy
 
 
 class Game(object):
@@ -79,7 +80,7 @@ class Game(object):
         self.eminent_domain = True
         self.eminent_domain_round = 200
 
-    def add_player(self, ai_info, oracle_info = None):
+    def add_player(self, ai_info, oracle_info = None, mc_ais = None):
         '''
         Adds a player AI.
 
@@ -97,18 +98,20 @@ class Game(object):
             player_number = 0
 
         # We wrap the AI up into a Player object...
-        if oracle_info is None:
+        if oracle_info is None and mc_ais is None:
             player = Player(ai, player_number, self.state.board)
-            self.state.players.append(player)
-            return player
-        else:
+        elif oracle_info is not None:
             try:
                 oracle_ai = oracle_info[0]
             except:
                 oracle_ai = oracle_info
             player = OraclePlayer(ai, player_number, self.state.board, oracle_ai)
-            self.state.players.append(player)
-            return player
+        else:
+            player = MonteCarloPlayer(ai,player_number,self.state.board,mc_ais)
+        
+        self.state.players.append(player)
+        return player
+
 
     def play_game(self):
         '''
@@ -171,10 +174,30 @@ class Game(object):
         # Note that we iterate over a copy of the list of players, as
         # players can be removed from the game if they go bankrupt.
         list_players = list(self.state.players)
-        for player in list_players:
+        for player_num,player in enumerate(list_players):
             if player.state.cash < 0:
                 # The player is out...
                 continue
+
+            if player.is_mcp():
+
+                print("HHHHHH")
+
+
+                for ai_ind in range(player.num_ais):
+                    state_cp = copy.deepcopy(self)
+
+                    state_cp.state.players[player_num].set_ai(ai_ind)
+                    # play rest of turn
+                    for p in state_cp.state.players[player_num:]:
+                        state_cp.play_one_turn(p)
+
+                    # play rest of depth turns
+                    for k in range(9):
+                        for p in state_cp.state.players:
+                            state_cp.play_one_turn(p)
+
+                print("TTTTTT")
 
             # The player takes a turn...
             self.play_one_turn(player)
@@ -193,7 +216,7 @@ class Game(object):
         '''
         # Some logging...
         Logger.log("")
-        Logger.log("Start of turn for {0}".format(current_player.name))
+        Logger.log("Start of turn {1} for {0}".format(current_player.name,current_player.state.turns_played))
         Logger.indent()
         Logger.log("Cash=£{0}, Net Worth=£{1}".format(current_player.state.cash, current_player.net_worth))
 

@@ -70,6 +70,7 @@ class PlayerAIBase(object):
         OFFERED_TOO_LITTLE_MONEY = 3
         PLAYER_DID_NOT_HAVE_ENOUGH_MONEY = 4
         DEAL_REJECTED = 5
+        
 
     def get_name(self):
         '''
