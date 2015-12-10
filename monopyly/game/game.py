@@ -8,6 +8,7 @@ from .deal_result import DealResult
 from ..squares import Square, Property, Street
 from ..utility import Logger
 import copy
+import time
 
 
 class Game(object):
@@ -88,14 +89,9 @@ class Game(object):
 
         Returns the Player object created.
         '''
-        # ai_info might be a tuple (ai, player-number) or it
-        # might just be an AI...
-        try:
-            ai = ai_info[0]
-            player_number = ai_info[1]
-        except:
-            ai = ai_info
-            player_number = 0
+
+        ai = ai_info[0]
+        player_number = ai_info[1]
 
         # We wrap the AI up into a Player object...
         if oracle_info is None and mc_ais is None:
@@ -109,7 +105,19 @@ class Game(object):
         else:
             player = MonteCarloPlayer(ai,player_number,self.state.board,mc_ais)
         
+        print("")
+        print(len(self.state.players))
+        print(player.name)
+        for i,x in enumerate(self.state.players):
+            print(i,x.name)
+
         self.state.players.append(player)
+
+        print("")
+        print(len(self.state.players))
+        print(player.name)
+        for i,x in enumerate(self.state.players):
+            print(i,x.name)
         return player
 
 
@@ -180,25 +188,34 @@ class Game(object):
                 continue
 
             if player.is_mcp():
+                num_iters = 1
+                depth = 3
 
-                print("HHHHHH")
+                print("\n\n\nHHHHHH")
 
 
                 for ai_ind in range(player.num_ais):
-                    state_cp = copy.deepcopy(self)
+                    for iteration in range(num_iters):
+                        state_cp = copy.deepcopy(self)
 
-                    state_cp.state.players[player_num].set_ai(ai_ind)
-                    # play rest of turn
-                    for p in state_cp.state.players[player_num:]:
-                        state_cp.play_one_turn(p)
-
-                    # play rest of depth turns
-                    for k in range(9):
-                        for p in state_cp.state.players:
+                        print("AI: {0}".format(state_cp.state.players[player_num].set_ai(ai_ind)))
+                        # play rest of turn
+                        for p in state_cp.state.players[player_num:]:
                             state_cp.play_one_turn(p)
 
-                print("TTTTTT")
+                        # play rest of depth turns
+                        for k in range(depth):
+                            for p in state_cp.state.players:
+                                state_cp.play_one_turn(p)
 
+                print("TTTTTT\n\n\n")
+
+                time.sleep(10)
+
+                # put eval function here
+                best_ai = 1
+                player.set_ai(best_ai)
+            
             # The player takes a turn...
             self.play_one_turn(player)
 

@@ -99,8 +99,8 @@ class Player(object):
         # And return what the function returned...
         return result
 
-    def __str__(self):
-        return self.state.__str__()
+    # def __str__(self):
+    #     return self.state.__str__()
 
 
 #TODO
@@ -195,15 +195,19 @@ class MonteCarloPlayer(Player):
     def __init__(self, ai, player_number, board, ai_list):
         super().__init__(ai, player_number, board)
         self.ai_list = ai_list
+        self.ai_names = [a.get_name() for a in ai_list]
 
-        for ais in self.ai_list:
-            ais.set_name(self.ai.get_name())
+        self.ai_players = [Player(ai_mc, player_number, board) for ai_mc in self.ai_list]        
 
         self.ai_moves = {}
         self.curr_ai = 0
         self.num_ais = len(ai_list)
 
         self.call_count = 0
+
+    def change_names(self):
+        for ais in self.ai_list:
+            ais.set_name(self.ai.get_name())
 
     def is_mcp(self):
         return True
@@ -213,15 +217,33 @@ class MonteCarloPlayer(Player):
 
     def set_ai(self,ai_ind):
         self.curr_ai = ai_ind
+        return self.ai_names[ai_ind]
 
     def call_ai(self, function, *args):
 
         self.call_count+=1
 
         start = time.clock()
+        results = []
 
-        funcToCall = getattr(self.ai_list[self.curr_ai], function.__name__)
-        result = funcToCall(*args)
+        args = list(args)
+        for ai in self.ai_list:
+            funcToCall = getattr(ai, function.__name__)
+            ai_result = funcToCall(*args)
+            results.append(ai_result)
+            if ai_result is not None:
+                print("RESULT: ",ai_result)
+        #print("NARGS",args,self)
+        # if current_player:
+        #     print("CP",current_player)
+        # for ai in self.ai_players:
+        #     ai_result = ai.call_ai(function,*tuple(args))
+        #     results.append(ai_result)
+        #     if ai_result is not None:
+        #         print("RESULT: ",ai_result)
+
+        result = results[self.curr_ai]
+
 
         end = time.clock()
         elapsed_seconds = end - start
@@ -234,9 +256,9 @@ class MonteCarloPlayer(Player):
         return result
 
 
-    def __str__(self):
+    # def __str__(self):
 
-        ai_state = self.state.__str__()
+    #     ai_state = self.state.__str__()
 
-        return "(MC Player) {0}".format(ai_state) 
+    #     return "(MC Player) {0}, {1}".format(self.ai.get_name(),ai_state) 
 

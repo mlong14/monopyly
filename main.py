@@ -55,21 +55,23 @@ else:
     Logger.add_handler(ConsoleLogHandler(Logger.INFO))
 
     # We select specific AIs from the ones loaded...
-    for ai in ais:
-        print(ai.get_name())
+
     kk_ai1 = next(ai for ai in ais if ai.get_name() == "KKBaseline")
     kk_ai2 = next(ai for ai in ais if ai.get_name() == "KKBaseline")
+    ml_ai = next(ai for ai in ais if ai.get_name() == "MLBaseline")
     xander_ai = next(ai for ai in ais if ai.get_name() == "Xander")
-    baldrick_ai = next(ai for ai in ais if ai.get_name() == "Baldrick")
-    
+    brill_ai = next(ai for ai in ais if ai.get_name() == "Brill")
 
+    
     # We set up and play a single game...
     game = Game()
     # game.add_player(ml_ai)
     # game.add_player(kk_ai,oracle_ai)
     # game.add_player(xander_ai)
-    game.add_player(kk_ai1)
-    game.add_player(xander_ai,mc_ais=[baldrick_ai,kk_ai2])
+    
+    game.add_player((kk_ai1,0))
+    game.add_player((ml_ai,1),mc_ais=[xander_ai,brill_ai])
+
     #game.add_player(kk_ai2)
     game.play_game()
 
