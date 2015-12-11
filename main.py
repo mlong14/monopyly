@@ -6,12 +6,15 @@ parser.add_argument("-d", "--ai_dir",
                     default="AIs_dev")
 parser.add_argument("-t", "--tournament",
                     action='store_true')
+parser.add_argument("-b", "--brett",
+                    action='store_true')
 
 args = parser.parse_args()
 
 # True to play a tournament, False to play a single game
 # with selected players...
 play_tournament = args.tournament
+play_brett = args.brett
 
 # We find the collection of AIs from the AIs folder...
 ais = load_ais(args.ai_dir)
@@ -26,25 +29,45 @@ if play_tournament:
     Logger.add_handler(FileLogHandler("tournament.log", Logger.INFO_PLUS))
     Logger.log("Number of AIs: {0}".format(len(ais)), Logger.INFO_PLUS)
 
-    # We set up and play a tournament...
-    mc_player = "MLBaseline"
-    mc_ais = ["Xander","Brill"]
-    tournament = Tournament(
-        player_ais=[a for a in ais if a.get_name() != mc_player and a.get_name() not in set(mc_ais)],
-        mc_player=[a for a in ais if a.get_name() == mc_player][0],
-        mc_ais=[a for a in ais if a.get_name() in set(mc_ais)],
-        min_players_per_game=3,
-        max_players_per_game=3,
-        number_of_rounds=5,
-        maximum_games=100,
-        permutations_or_combinations=Tournament.PERMUTATIONS)
+    our_player = "MLBaseline"
+    brett_players = ["Bretts AI","Xander","Buffy","Cordie","Willow"]
 
-    # Sends updates to the C# GUI...
-    #tournament.messaging_server = MessagingServer(update_every_n_turns=10, sleep_between_turns_seconds=0.0)
+    if play_brett:
+        for p in brett_players:
+            ais_for_game = [a for a in ais if a.get_name() not in set(brett_players) and a.get_name() != our_player]
+            desired_player = [a for a in ais if a.get_name()==p][0]
+            ais_for_game.append(desired_player)
+            tournament = IncludeTournament(
+                player_ais=ais_for_game,
+                desired_player=desired_player,
+                min_players_per_game=3,
+                max_players_per_game=3,
+                number_of_rounds=30,
+                maximum_games=100,
+                permutations_or_combinations=Tournament.PERMUTATIONS)
+            tournament.play()
+            tournament.log_results(final=True)
 
-    # We play the tournament...
-    tournament.play()
-    tournament.log_results()
+    else:
+        # We set up and play a tournament with MC player and all of Bretts AIS
+        mc_player = our_player
+        mc_ais = brett_players
+        tournament = MCTournament(
+            player_ais=[a for a in ais if a.get_name() != mc_player and a.get_name() not in set(mc_ais)],
+            mc_player=[a for a in ais if a.get_name() == mc_player][0],
+            mc_ais=[a for a in ais if a.get_name() in set(mc_ais)],
+            min_players_per_game=3,
+            max_players_per_game=3,
+            number_of_rounds=30,
+            maximum_games=100,
+            permutations_or_combinations=Tournament.PERMUTATIONS)
+
+        # Sends updates to the C# GUI...
+        #tournament.messaging_server = MessagingServer(update_every_n_turns=10, sleep_between_turns_seconds=0.0)
+
+        # We play the tournament...
+        tournament.play()
+        tournament.log_results(final=True)
 
 else:
     # We play a single game with selected players.

@@ -7,5 +7,6 @@ from .deal_proposal import DealProposal
 from .deal_response import DealResponse
 from .deal_result import DealResult
 from .tournament import Tournament
-
+from .tournament import MCTournament
+from .tournament import IncludeTournament
 

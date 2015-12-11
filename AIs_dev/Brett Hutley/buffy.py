@@ -119,8 +119,7 @@ class Buffy(PlayerAIBase):
 
         No response is required.
         '''
-        if player.ai != self:
-            return
+
 
         self.num_turns += 1
 

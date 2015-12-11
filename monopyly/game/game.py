@@ -10,6 +10,7 @@ from ..utility import Logger
 import copy
 import time
 import os
+from datetime import datetime
 
 
 class Game(object):
@@ -81,6 +82,10 @@ class Game(object):
             open(self.choice_log_mid,"w")
             open(self.choice_log_late,"w")
 
+        self.turn_log = "feature_logging/turn_time.csv"
+        if not os.path.exists(self.turn_log):
+            open(self.turn_log,"w")
+
         # The winning player...
         self.winner = None
 
@@ -133,19 +138,9 @@ class Game(object):
         else:
             player = MonteCarloPlayer(ai,player_number,self.state.board,mc_ais)
         
-        print("")
-        print(len(self.state.players))
-        print(player.name)
-        for i,x in enumerate(self.state.players):
-            print(i,x.name)
 
         self.state.players.append(player)
 
-        print("")
-        print(len(self.state.players))
-        print(player.name)
-        for i,x in enumerate(self.state.players):
-            print(i,x.name)
         return player
 
 
@@ -183,8 +178,6 @@ class Game(object):
                 break
 
         for player in full_player_list:
-            print(player.name, player) 
-
             if type(player) == OraclePlayer:
                 player.basic_analysis()
 
@@ -216,19 +209,23 @@ class Game(object):
                 continue
 
             if player.is_mcp():
+                #num_iters = 5,10,20,40,100 w/ depth 2
+                #depth = 1,2,3,4,5 w/num_iters 20
                 num_iters = 20
                 depth = 2
 
-                #print("\n\n\nHHHHHH")
-
+                av_time = None
                 scores = [0 for _ in range(player.num_ais)]
                 for ai_ind in range(player.num_ais):
+                    st_time = datetime.now()
                     for iteration in range(num_iters):
                         state_cp = copy.deepcopy(self)
                         orig_cash = [(p,p.state.cash) for p in state_cp.state.players]
 
                         try:
-                            #print("AI: {0}".format(state_cp.state.players[player_num].set_ai(ai_ind)))
+                            player_cp = [p for p in state_cp.state.players if p.name == player.name][0]
+                            player_cp.set_ai(ai_ind)
+                            #print("{1} AI: {0}".format(player_cp.ai_names[ai_ind],iteration))
                             
                             # play rest of turn
                             for p in state_cp.state.players[player_num:]:
@@ -241,15 +238,29 @@ class Game(object):
                                 for p in state_cp.state.players:
                                     state_cp.play_one_turn(p)
 
-                            # try:
-                            scores[ai_ind] += self.evaluateScore(state_cp.state,state_cp.state.players[player_num],orig_cash)
-                            # except:
-                            #     pass
-                        except Exception as e:
+                            player_cp = [p for p in state_cp.state.players if p.name == player.name]
+
+                            if len(player_cp)==1:
+                                if len(state_cp.state.players) == 1:
+                                    scores[ai_ind] += 100 #WIN
+                                else:
+                                    scores[ai_ind] += self.evaluateScore(state_cp.state,player_cp[0],orig_cash)
+                            else:
+                                scores[ai_ind] -= 100 #LOSS
+
+                        except ZeroDivisionError as e:
                             print("AI CAUGHT ERROR {0}".format(e))
                             scores[ai_ind] += 0
+                    if av_time is None:
+                        av_time = datetime.now()-st_time
+                    else:
+                        av_time += datetime.now()-st_time
 
-                #print("TTTTTT\n\n\n")
+                av_time = av_time/player.num_ais
+
+                f_ht = open(self.turn_log,"a")
+                f_ht.write(",".join([str(x) for x in [num_iters,depth,av_time]])+"\n")
+                f_ht.flush()  
 
                 # put eval function here
                 best_ai = sorted([(i,x) for i,x in enumerate(scores)],key=lambda tup: tup[1], reverse=True)[0][0]
@@ -263,7 +274,7 @@ class Game(object):
                 else:
                     f_h = open(self.choice_log_late,"a")
 
-                out_str = ["winner",player.ai_names[best_ai]]
+                out_str = ["winner",player.ai_names[best_ai],"num_iters",str(num_iters),"depth",str(depth)]
                 for tup in zip(player.ai_names,scores):
                     out_str.append(str(tup[0]))
                     out_str.append(str(float(tup[1])/num_iters))
@@ -1337,6 +1348,8 @@ class Game(object):
                 "blocker":3
             }
             f_h = open(self.feature_log_file_early,"a")
+            money_std,money_mean = 273.404238,-355.7018349
+            proprat_std,proprat_mean = 0.041614852,0.119921363
         elif percent_owned<1.0:
             weights = {
                 "sets":6,
@@ -1347,6 +1360,8 @@ class Game(object):
                 "blocker":6
             }
             f_h = open(self.feature_log_file_mid,"a")
+            money_std,money_mean = 221.5765496,-15.756594
+            proprat_std,proprat_mean = 0.052674887,0.242274737
         else:
             weights = {
                 "sets":1,
@@ -1357,6 +1372,8 @@ class Game(object):
                 "blocker":4
             }
             f_h = open(self.feature_log_file_late,"a")
+            money_std,money_mean = 357.2735215,-69.28440438
+            proprat_std,proprat_mean = 0.044860331,0.246386742
 
         scores = {}
         #sets
@@ -1364,13 +1381,14 @@ class Game(object):
             # scores["sets"]=len(player.state.owned_unmortgaged_sets)/sum([len(p.state.owned_unmortgaged_sets) for p in game_state.players])
             scores["sets"]=len(player.state.owned_unmortgaged_sets)
         except ZeroDivisionError:
-            pass
+            scores["sets"] = 0
+
 
         #prop. ratio
         total_props = self.get_buyable_props(game_state)
         props_owned = self.get_props_owned(game_state,player)
 
-        scores["proprat"]=float(len(props_owned))/len(total_props)
+        scores["proprat"]=(float(len(props_owned))/len(total_props)-proprat_mean)/proprat_std
 
         #blocker
         count = 0
@@ -1395,7 +1413,7 @@ class Game(object):
         # orig_cash_share = float([tup[1] for tup in orig_cash if tup[0] == player][0])/sum([tup[1] for tup in orig_cash])
         # new_cash = [(p,p.state.cash) for p in game_state.players]
         # new_cash_share = float([tup[1] for tup in new_cash if tup[0] == player][0])/sum([tup[1] for tup in new_cash])
-        scores["money"]=player.state.cash-[tup[1] for tup in orig_cash if tup[0] == player][0]
+        scores["money"]=((player.state.cash-[tup[1] for tup in orig_cash if tup[0] == player][0])-money_mean)/money_std
 
         score = 0
 
@@ -1404,9 +1422,9 @@ class Game(object):
                 score+=scores[w]*weights[w]
 
         score_str = []
-        for k,v in scores.items():
+        for k in sorted(scores.keys()):
             score_str.append(str(k))
-            score_str.append(str(v))
+            score_str.append(str(scores[k]))
 
         f_h.write(",".join(score_str)+"\n")
         f_h.flush()        
@@ -1433,4 +1451,3 @@ class Game(object):
             except:
                 pass
         return buy_props
-
