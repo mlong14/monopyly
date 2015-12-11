@@ -33,8 +33,8 @@ if play_tournament:
         player_ais=[a for a in ais if a.get_name() != mc_player and a.get_name() not in set(mc_ais)],
         mc_player=[a for a in ais if a.get_name() == mc_player][0],
         mc_ais=[a for a in ais if a.get_name() in set(mc_ais)],
-        min_players_per_game=4,
-        max_players_per_game=4,
+        min_players_per_game=3,
+        max_players_per_game=3,
         number_of_rounds=5,
         maximum_games=100,
         permutations_or_combinations=Tournament.PERMUTATIONS)

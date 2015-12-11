@@ -180,54 +180,56 @@ class Tournament(object):
             ais_per_game = random.sample(ais_per_game, self.max_games_per_round)
 
         for ais_for_this_game in ais_per_game:
-            # Each permutation is a collection of player AIs. We play a game with these AIs...
-            game = Game()
-            game.tournament = self
-            game.eminent_domain = eminent_domain
-            for ai in ais_for_this_game:
-                if ai[0] == self.mc_player:
-                    game.add_player(ai,mc_ais=self.mc_ais)
+
+            if any([ai[0]==self.mc_player for ai in ais_for_this_game]):
+                # Each permutation is a collection of player AIs. We play a game with these AIs...
+                game = Game()
+                game.tournament = self
+                game.eminent_domain = eminent_domain
+                for ai in ais_for_this_game:
+                    if ai[0] == self.mc_player:
+                        game.add_player(ai,mc_ais=self.mc_ais)
+                    else:
+                        game.add_player(ai)
+
+                # We notify the GUI that the game has started...
+                if self.messaging_server is not None:
+                    self.messaging_server.send_start_of_game_message()
+
+                # We play the game...
+                game.play_game()
+
+                # We add the winner to the results...
+                winner = game.winner
+                if winner is None:
+                    winner_name = "Game drawn"
                 else:
-                    game.add_player(ai)
+                    winner_name = winner.name
 
-            # We notify the GUI that the game has started...
-            if self.messaging_server is not None:
-                self.messaging_server.send_start_of_game_message()
+                # We update the player infos...
+                for player in itertools.chain(game.state.players, game.state.bankrupt_players):
+                    player_info = self.player_infos[player.player_number]
 
-            # We play the game...
-            game.play_game()
+                    # Did this player win?
+                    if player_info.name == winner_name:
+                        player_info.games_won += 1
 
-            # We add the winner to the results...
-            winner = game.winner
-            if winner is None:
-                winner_name = "Game drawn"
-            else:
-                winner_name = winner.name
+                    # We update the processing stats...
+                    player_info.turns_played += player.state.turns_played
+                    player_info.processing_seconds += player.state.ai_processing_seconds_used
 
-            # We update the player infos...
-            for player in itertools.chain(game.state.players, game.state.bankrupt_players):
-                player_info = self.player_infos[player.player_number]
+                # We log the results...
+                self.game_count += 1
+                player_names = [ai[0].get_name() for ai in ais_for_this_game]
+                message = "Game {0}:  Winner was: {3} ({1} eminent-domain: {2})".format(
+                    self.game_count, player_names, eminent_domain, winner_name)
+                Logger.log(message, Logger.INFO_PLUS)
 
-                # Did this player win?
-                if player_info.name == winner_name:
-                    player_info.games_won += 1
+                # We show interim results every 10 games...
+                if self.game_count % 10 == 0:
+                    self.log_results()
 
-                # We update the processing stats...
-                player_info.turns_played += player.state.turns_played
-                player_info.processing_seconds += player.state.ai_processing_seconds_used
-
-            # We log the results...
-            self.game_count += 1
-            player_names = [ai[0].get_name() for ai in ais_for_this_game]
-            message = "Game {0}:  Winner was: {3} ({1} eminent-domain: {2})".format(
-                self.game_count, player_names, eminent_domain, winner_name)
-            Logger.log(message, Logger.INFO_PLUS)
-
-            # We show interim results every 10 games...
-            if self.game_count % 10 == 0:
-                self.log_results()
-
-            # We update the GUI...
-            if self.messaging_server is not None:
-                self.messaging_server.send_end_of_turn_messages(tournament=self, game=game, force_send=True)
+                # We update the GUI...
+                if self.messaging_server is not None:
+                    self.messaging_server.send_end_of_turn_messages(tournament=self, game=game, force_send=True)
 

@@ -79,6 +79,7 @@ class Willow(PlayerAIBase):
         '''
         The 'constructor'.
         '''
+        self.name = "Willow"
         self.cash_reserve = 0
         self.high_water_mark = 0
         self.num_turns = 0
@@ -94,7 +95,10 @@ class Willow(PlayerAIBase):
         '''
         Returns the name shown for this AI.
         '''
-        return "Willow"
+        return self.name
+
+    def set_name(self,n):
+        self.name = n
 
     def start_of_game(self):
         '''
@@ -118,8 +122,6 @@ class Willow(PlayerAIBase):
 
         No response is required.
         '''
-        if player.ai != self:
-            return
 
         self.num_turns += 1
 

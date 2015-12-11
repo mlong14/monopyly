@@ -508,7 +508,7 @@ class BrillAI(PlayerAIBase):
     def auction_result(self, status, property, player, amount_paid):
         self.in_auction = False
 
-        if property is None:
+        if property is None or player is None:
             return
 
         for bidder, bid in self.bids.items():
