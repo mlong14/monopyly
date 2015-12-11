@@ -46,6 +46,8 @@ class Tournament(object):
     def __init__(
             self,
             player_ais,
+            mc_player,
+            mc_ais,
             min_players_per_game,
             max_players_per_game,
             number_of_rounds,
@@ -56,13 +58,22 @@ class Tournament(object):
         '''
         # We hold a list of _PlayerInfo objects - one for each plater...
         self.player_infos = dict()
-        number_of_player_ais = len(player_ais)
-        for player_number in range(number_of_player_ais):
+        number_of_player_ais = len(player_ais)+1
+        for player_number in range(number_of_player_ais-1):
             player_info = Tournament._PlayerInfo()
             player_info.ai = player_ais[player_number]
             player_info.name = player_info.ai.get_name()
             player_info.player_number = player_number
             self.player_infos[player_number] = player_info
+
+        player_info = Tournament._PlayerInfo()
+        player_info.ai = mc_player
+        player_info.name = player_info.ai.get_name()
+        player_info.player_number = number_of_player_ais-1
+        self.player_infos[number_of_player_ais-1] = player_info
+
+        self.mc_player = mc_player
+        self.mc_ais = mc_ais
 
         self.number_of_rounds = number_of_rounds
 
@@ -174,7 +185,10 @@ class Tournament(object):
             game.tournament = self
             game.eminent_domain = eminent_domain
             for ai in ais_for_this_game:
-                game.add_player(ai)
+                if ai[0] == self.mc_player:
+                    game.add_player(ai,mc_ais=self.mc_ais)
+                else:
+                    game.add_player(ai)
 
             # We notify the GUI that the game has started...
             if self.messaging_server is not None:

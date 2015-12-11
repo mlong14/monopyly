@@ -205,10 +205,6 @@ class MonteCarloPlayer(Player):
 
         self.call_count = 0
 
-    def change_names(self):
-        for ais in self.ai_list:
-            ais.set_name(self.ai.get_name())
-
     def is_mcp(self):
         return True
 
@@ -229,18 +225,12 @@ class MonteCarloPlayer(Player):
         args = list(args)
         for ai in self.ai_list:
             funcToCall = getattr(ai, function.__name__)
-            ai_result = funcToCall(*args)
+            try:
+                ai_result = funcToCall(*args)
+            except:
+                print(funcToCall,args)
+                ai_result = None
             results.append(ai_result)
-            if ai_result is not None:
-                print("RESULT: ",ai_result)
-        #print("NARGS",args,self)
-        # if current_player:
-        #     print("CP",current_player)
-        # for ai in self.ai_players:
-        #     ai_result = ai.call_ai(function,*tuple(args))
-        #     results.append(ai_result)
-        #     if ai_result is not None:
-        #         print("RESULT: ",ai_result)
 
         result = results[self.curr_ai]
 

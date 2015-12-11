@@ -58,6 +58,7 @@ class Game(object):
         self.dice = Dice()
         self.most_recent_total_dice_roll = 0
         self.status = Game.Action.GAME_NOT_OVER
+        self.num_players = 0
 
         # The winning player...
         self.winner = None
@@ -90,8 +91,14 @@ class Game(object):
         Returns the Player object created.
         '''
 
-        ai = ai_info[0]
-        player_number = ai_info[1]
+        try:
+            if len(ai_info) == 2:
+                ai = ai_info[0]
+                player_number = ai_info[1]
+        except:
+            ai = ai_info
+            player_number = self.num_players
+            self.num_players+=1
 
         # We wrap the AI up into a Player object...
         if oracle_info is None and mc_ais is None:
@@ -188,33 +195,45 @@ class Game(object):
                 continue
 
             if player.is_mcp():
-                num_iters = 1
-                depth = 3
+                num_iters = 4
+                depth = 2
 
-                print("\n\n\nHHHHHH")
+                #print("\n\n\nHHHHHH")
 
-
+                scores = [0 for _ in range(player.num_ais)]
                 for ai_ind in range(player.num_ais):
                     for iteration in range(num_iters):
                         state_cp = copy.deepcopy(self)
+                        orig_cash = [(p,p.state.cash) for p in state_cp.state.players]
 
-                        print("AI: {0}".format(state_cp.state.players[player_num].set_ai(ai_ind)))
-                        # play rest of turn
-                        for p in state_cp.state.players[player_num:]:
-                            state_cp.play_one_turn(p)
-
-                        # play rest of depth turns
-                        for k in range(depth):
-                            for p in state_cp.state.players:
+                        try:
+                            #print("AI: {0}".format(state_cp.state.players[player_num].set_ai(ai_ind)))
+                            
+                            # play rest of turn
+                            for p in state_cp.state.players[player_num:]:
                                 state_cp.play_one_turn(p)
 
-                print("TTTTTT\n\n\n")
+                            # play rest of depth turns
+                            for k in range(depth):
+                                if any([p.state.cash<0 for p in state_cp.state.players]):
+                                    pass
+                                for p in state_cp.state.players:
+                                    state_cp.play_one_turn(p)
 
-                time.sleep(10)
+                            try:
+                                scores[ai_ind] += evaluateScore(state_cp.state,state_cp.state.players[player_num],orig_cash)
+                            except:
+                                pass
+                        except Exception as e:
+                            #print("AI CAUGHT ERROR {0}".format(e))
+                            scores[ai_ind] += 0
+
+                #print("TTTTTT\n\n\n")
 
                 # put eval function here
-                best_ai = 1
+                best_ai = sorted([(i,x) for i,x in enumerate(scores)],key=lambda tup: tup[1], reverse=True)[0][0]
                 player.set_ai(best_ai)
+                #print("CHOOSE: {0}".format(player.ai_names[best_ai]))
             
             # The player takes a turn...
             self.play_one_turn(player)
@@ -1253,3 +1272,110 @@ class Game(object):
         # Now we auction all properties...
         for property in properties:
             self._offer_property_for_auction(property)
+
+
+
+
+def evaluateScore(game_state, player, orig_cash):
+
+    total_props = get_buyable_props(game_state,player)
+    all_props_owned = 0
+    for p in game_state.players:
+        all_props_owned+=len(get_props_owned(game_state,p))
+
+    percent_owned = float(all_props_owned)/len(total_props)
+
+    if percent_owned<0.5:
+        weights = {
+            "sets":3,
+            "proprat":6,
+            "houses":2,
+            "hotels":1,
+            "money":2,
+            "blocker":3
+        }
+    elif percent_owned<1.0:
+        weights = {
+            "sets":6,
+            "proprat":3,
+            "houses":4,
+            "hotels":2,
+            "money":3,
+            "blocker":6
+        }
+    else:
+        weights = {
+            "sets":1,
+            "proprat":1,
+            "houses":4,
+            "hotels":6,
+            "money":5,
+            "blocker":4
+        }
+
+    scores = {}
+    #sets
+    try:
+        scores["sets"]=len(player.state.owned_unmortgaged_sets)/sum([len(p.state.owned_unmortgaged_sets) for p in game_state.players])
+    except ZeroDivisionError:
+        pass
+
+    #prop. ratio
+    props_owned = get_props_owned(game_state,player)
+
+    scores["proprat"]=float(len(props_owned))/len(total_props)
+
+    #blocker
+    count = 0
+    for prop in props_owned:
+        if prop.property_set not in player.state.owned_sets:
+            # if this property union properties other player owns ---> count += 1
+            num_props_in_set = prop.property_set.number_of_properties
+            prop_set_owners = prop.property_set.owners
+            if (len(prop_set_owners) == 2) and prop.property_set.number_of_owned_properties == num_props_in_set:
+                if (prop_set_owners[0][0] == player and prop_set_owners[0][1] == 1) or (prop_set_owners[1][0] == player and prop_set_owners[1][1] == 1):
+                    count += 1
+
+    scores["blocker"] = count
+
+    #houses
+    scores["houses"]=player.state.get_number_of_houses_and_hotels(game_state.board)[0]
+
+    #hotels
+    scores["hotels"]=player.state.get_number_of_houses_and_hotels(game_state.board)[1]
+
+    #money
+    orig_cash_share = float([tup[1] for tup in orig_cash if tup[0] == player][0])/sum([tup[1] for tup in orig_cash])
+    new_cash = [(p,p.state.cash) for p in game_state.players]
+    new_cash_share = float([tup[1] for tup in new_cash if tup[0] == player][0])/sum([tup[1] for tup in new_cash])
+    scores["money"]=new_cash_share-orig_cash_share
+
+    score = 0
+
+    for w in weights:
+        if w in scores:
+            score+=scores[w]*weights[w]
+
+    return score
+
+
+
+
+def get_props_owned(game_state,player):
+    props_owned = []
+    for prop in game_state.board.squares:
+        if player.owns_properties([prop]):
+            props_owned.append(prop)
+    return props_owned
+
+
+def get_buyable_props(game_state,player):
+    buy_props = []
+    for prop in game_state.board.squares:
+        try:
+            _ = prop.price
+            buy_props.append(prop)
+        except:
+            pass
+    return buy_props
+

@@ -27,12 +27,16 @@ if play_tournament:
     Logger.log("Number of AIs: {0}".format(len(ais)), Logger.INFO_PLUS)
 
     # We set up and play a tournament...
+    mc_player = "MLBaseline"
+    mc_ais = ["Xander","Brill"]
     tournament = Tournament(
-        player_ais=ais,
+        player_ais=[a for a in ais if a.get_name() != mc_player and a.get_name() not in set(mc_ais)],
+        mc_player=[a for a in ais if a.get_name() == mc_player][0],
+        mc_ais=[a for a in ais if a.get_name() in set(mc_ais)],
         min_players_per_game=4,
         max_players_per_game=4,
-        number_of_rounds=100,
-        maximum_games=2000,
+        number_of_rounds=5,
+        maximum_games=100,
         permutations_or_combinations=Tournament.PERMUTATIONS)
 
     # Sends updates to the C# GUI...
@@ -56,11 +60,12 @@ else:
 
     # We select specific AIs from the ones loaded...
 
-    kk_ai1 = next(ai for ai in ais if ai.get_name() == "KKBaseline")
-    kk_ai2 = next(ai for ai in ais if ai.get_name() == "KKBaseline")
+    kk_ai = next(ai for ai in ais if ai.get_name() == "KKBaseline")
     ml_ai = next(ai for ai in ais if ai.get_name() == "MLBaseline")
     xander_ai = next(ai for ai in ais if ai.get_name() == "Xander")
+    #bigbrick_ai = next(ai for ai in ais if ai.get_name() == "The Big Brick")
     brill_ai = next(ai for ai in ais if ai.get_name() == "Brill")
+    #rimpo_ai = next(ai for ai in ais if ai.get_name() == "RimpoAI")
 
     
     # We set up and play a single game...
@@ -69,8 +74,10 @@ else:
     # game.add_player(kk_ai,oracle_ai)
     # game.add_player(xander_ai)
     
-    game.add_player((kk_ai1,0))
-    game.add_player((ml_ai,1),mc_ais=[xander_ai,brill_ai])
+    #game.add_player((rimpo_ai,0))
+    game.add_player(ml_ai,mc_ais=[xander_ai,brill_ai])
+    #game.add_player((bigbrick_ai,2))
+    game.add_player(kk_ai)
 
     #game.add_player(kk_ai2)
     game.play_game()
