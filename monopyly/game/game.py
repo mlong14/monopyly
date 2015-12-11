@@ -71,6 +71,16 @@ class Game(object):
             open(self.feature_log_file_mid,"w")
             open(self.feature_log_file_late,"w")
 
+        self.choice_log_early = "feature_logging/choice_early.csv"
+        self.choice_log_mid = "feature_logging/choice_mid.csv"
+        self.choice_log_late = "feature_logging/choice_late.csv"
+        if not all([os.path.exists(x) for x in [self.choice_log_early,self.choice_log_late,self.choice_log_mid]]):
+            if not os.path.exists("feature_logging"):
+                os.mkdir("feature_logging")
+            open(self.choice_log_early,"w")
+            open(self.choice_log_mid,"w")
+            open(self.choice_log_late,"w")
+
         # The winning player...
         self.winner = None
 
@@ -236,7 +246,7 @@ class Game(object):
                             # except:
                             #     pass
                         except Exception as e:
-                            #print("AI CAUGHT ERROR {0}".format(e))
+                            print("AI CAUGHT ERROR {0}".format(e))
                             scores[ai_ind] += 0
 
                 #print("TTTTTT\n\n\n")
@@ -244,7 +254,25 @@ class Game(object):
                 # put eval function here
                 best_ai = sorted([(i,x) for i,x in enumerate(scores)],key=lambda tup: tup[1], reverse=True)[0][0]
                 player.set_ai(best_ai)
-                #print("CHOOSE: {0}".format(player.ai_names[best_ai]))
+                percent_owned = self.get_prop_perc(self.state)
+
+                if percent_owned<0.5:
+                    f_h = open(self.choice_log_early,"a")
+                elif percent_owned<1.0:
+                    f_h = open(self.choice_log_mid,"a")
+                else:
+                    f_h = open(self.choice_log_late,"a")
+
+                out_str = ["winner",player.ai_names[best_ai]]
+                for tup in zip(player.ai_names,scores):
+                    out_str.append(str(tup[0]))
+                    out_str.append(str(float(tup[1])/num_iters))
+
+                f_h.write(",".join(out_str)+"\n")
+                f_h.flush()  
+
+
+                #print("CHOOSE: {0},{1}".format(player.ai_names[best_ai],scores))
             
             # The player takes a turn...
             self.play_one_turn(player)
@@ -1285,16 +1313,19 @@ class Game(object):
             self._offer_property_for_auction(property)
 
 
-
-
-    def evaluateScore(self,game_state, player, orig_cash):
-
-        total_props = self.get_buyable_props(game_state,player)
+    def get_prop_perc(self,game_state):
+        total_props = self.get_buyable_props(game_state)
         all_props_owned = 0
         for p in game_state.players:
             all_props_owned+=len(self.get_props_owned(game_state,p))
 
-        percent_owned = float(all_props_owned)/len(total_props)
+        return float(all_props_owned)/len(total_props)
+
+
+
+    def evaluateScore(self,game_state, player, orig_cash):
+
+        percent_owned = self.get_prop_perc(game_state)
 
         if percent_owned<0.5:
             weights = {
@@ -1336,6 +1367,7 @@ class Game(object):
             pass
 
         #prop. ratio
+        total_props = self.get_buyable_props(game_state)
         props_owned = self.get_props_owned(game_state,player)
 
         scores["proprat"]=float(len(props_owned))/len(total_props)
@@ -1392,7 +1424,7 @@ class Game(object):
         return props_owned
 
 
-    def get_buyable_props(self,game_state,player):
+    def get_buyable_props(self,game_state):
         buy_props = []
         for prop in game_state.board.squares:
             try:
